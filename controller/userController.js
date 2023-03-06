@@ -1,29 +1,36 @@
-const User = require("../models/userModel");
+const { User } = require("../models/userModel");
 
-exports.registerUser = async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-
-    // Validate input
-    if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Please provide username, email, and password" });
+const registerUser = {
+  register: async (req, res) => {
+    const { email, username, password } = req.body;
+    try {
+      const user = await User.findOne({ email: email });
+      if (user) {
+        return res.status(500).json({
+          message: "This email is already registered",
+        });
+      } else {
+        const newAuth = new User({
+          email: email,
+          username: username,
+          password: password,
+        });
+        newAuth.save((err, doc) => {
+          if (err) {
+            return res.status(500).json({
+              message: "There was a problem during registration",
+            });
+          } else {
+            return res.status(201).json({
+              message: "succes",
+            });
+          }
+        });
+      }
+    } catch (error) {
+      res.status(500).json(error);
     }
-
-    // Check if user already exists
-    const user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
-
-    // Create user
-    const newUser = new User({ username, email, password });
-    await newUser.save();
-
-    res.json({ message: "User registered successfully" });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  },
 };
+
+module.exports = { registerUser };
