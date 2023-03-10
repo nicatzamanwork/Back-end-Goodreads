@@ -1,34 +1,29 @@
-const { User } = require("../models/userModel");
+const User = require("../models/userModel");
 
 const registerUser = {
   register: async (req, res) => {
-    const { email, username, password } = req.body;
+    const { username, email, password } = req.body;
+
     try {
-      const user = await User.findOne({ email: email });
-      if (user) {
-        return res.status(500).json({
+      const existingUser = await User.findOne({ email: email });
+      if (existingUser) {
+        return res.status(409).json({
           message: "This email is already registered",
         });
-      } else {
-        const newAuth = new User({
-          email: email,
-          username: username,
-          password: password,
-        });
-        newAuth.save((err, doc) => {
-          if (err) {
-            return res.status(500).json({
-              message: "There was a problem during registration",
-            });
-          } else {
-            return res.status(201).json({
-              message: "succes",
-            });
-          }
-        });
       }
+
+      const newUser = new User({
+        email: email,
+        username: username,
+        password: password,
+      });
+      const savedUser = await newUser.save();
+      res.status(201).json(savedUser);
     } catch (error) {
-      res.status(500).json(error);
+      console.error(error);
+      res.status(500).json({
+        message: "There was a problem during registration",
+      });
     }
   },
 };
